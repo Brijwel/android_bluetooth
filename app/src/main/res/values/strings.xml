@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">AndroidBluetooth</string>
+    <string name="connect">Connect</string>
+    <string name="paired_devices">Paired Devices</string>
+    <string name="available_devices">Available Devices</string>
+    <string name="no_paired_devices_found">No Paired Devices Found!</string>
+</resources>
