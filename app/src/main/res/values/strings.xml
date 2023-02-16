@@ -1,7 +1,20 @@
 <resources>
     <string name="app_name">AndroidBluetooth</string>
     <string name="connect">Connect</string>
+
+
     <string name="paired_devices">Paired Devices</string>
     <string name="available_devices">Available Devices</string>
     <string name="no_paired_devices_found">No Paired Devices Found!</string>
+    <string name="scanning_devices">Scanning for devices…</string>
+    <string name="cancel">Cancel</string>
+    <string name="select_a_device">Select a device</string>
+    <string name="scan">Scan</string>
+
+    <string name="permission_required">Permission Required</string>
+    <string name="nearby_devices_permission_message">Nearby devices permission is required to connect with printer.\n\nEnable it from App Settings.</string>
+    <string name="camera_permission_message">Camera permission is required to scan QR code.\n\nEnable it from App Settings.</string>
+    <string name="requires_nearby_devices_permission_to_connect_with_printer">Requires Nearby devices permission to connect with printer.</string>
+    <string name="app_settings">App Settings</string>
+    <string name="ok_caps">OK</string>
 </resources>

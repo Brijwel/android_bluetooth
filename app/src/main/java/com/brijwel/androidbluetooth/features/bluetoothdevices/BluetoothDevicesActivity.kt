@@ -16,21 +16,21 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import com.brijwel.androidbluetooth.R
 import com.brijwel.androidbluetooth.databinding.ActivityBluetoothDevicesBinding
 import com.brijwel.androidbluetooth.utils.parcelable
 import com.brijwel.androidbluetooth.utils.viewBinding
 
-@SuppressLint("MissingPermission")
+
+@SuppressLint("MissingPermission", "ObsoleteSdkInt")
 class BluetoothDevicesActivity : AppCompatActivity() {
 
     companion object {
-        const val SCAN_PERIOD = 15000L
+        private const val SCAN_PERIOD = 15000L
+        const val RESULT_BLUETOOTH_DISCONNECTED = 3
     }
 
     private val binding by viewBinding { ActivityBluetoothDevicesBinding.inflate(it) }
@@ -64,6 +64,11 @@ class BluetoothDevicesActivity : AppCompatActivity() {
         registerBroadcastReceiver()
         initializeBluetoothAdapter()
         startDiscovery()
+
+        binding.btSwitch.setOnClickListener {
+            if (scanning) stopDiscovery()
+            else startDiscovery()
+        }
 
     }
 
@@ -99,26 +104,39 @@ class BluetoothDevicesActivity : AppCompatActivity() {
         stopDiscovery()
         fetchBluetoothDevices()
         //request discover from BluetoothAdapter
-        bluetoothAdapter.startDiscovery()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             handler.postDelayed(
                 endScanningRunnable,
                 SCAN_PERIOD
             )
             bluetoothLeScanner!!.startScan(leScanCallback)
+        } else {
+            bluetoothAdapter.startDiscovery()
         }
-        scanning = true
-        binding.progressBar.isVisible = true
+        setScanningState(true)
     }
 
     private fun stopDiscovery() {
         if (scanning && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             handler.removeCallbacks(endScanningRunnable)
             bluetoothLeScanner!!.stopScan(leScanCallback)
+        } else {
+            if (bluetoothAdapter.isDiscovering) bluetoothAdapter.cancelDiscovery()
         }
-        if (bluetoothAdapter.isDiscovering) bluetoothAdapter.cancelDiscovery()
-        scanning = false
-        binding.progressBar.isVisible = false
+
+        setScanningState(false)
+    }
+
+    private fun setScanningState(isScanning: Boolean) {
+        scanning = isScanning
+        binding.progressBar.isVisible = isScanning
+        if (isScanning) {
+            binding.title.text = getString(R.string.scanning_devices)
+            binding.btSwitch.text = getString(R.string.cancel)
+        } else {
+            binding.title.text = getString(R.string.select_a_device)
+            binding.btSwitch.text = getString(R.string.scan)
+        }
     }
 
     private fun registerBroadcastReceiver() {
@@ -137,6 +155,8 @@ class BluetoothDevicesActivity : AppCompatActivity() {
 
     private fun bluetoothTurnedOff() {
         stopDiscovery()
+        setResult(RESULT_BLUETOOTH_DISCONNECTED)
+        finish()
     }
 
     private fun bluetoothTurnedOn() {
@@ -176,7 +196,7 @@ class BluetoothDevicesActivity : AppCompatActivity() {
             }
             when (intent.action) {
                 BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
-                    binding.progressBar.isVisible = false
+                    setScanningState(false)
                 }
                 BluetoothDevice.ACTION_FOUND -> {
                     val bluetoothDevice =
@@ -200,7 +220,6 @@ class BluetoothDevicesActivity : AppCompatActivity() {
     }
 
     private fun updateBluetoothDevice(bluetoothDevice: BluetoothDevice) {
-        Log.d("BluetoothConnection", "Device $bluetoothDevice")
         val deviceData =
             BluetoothDeviceData(name = bluetoothDevice.name, address = bluetoothDevice.address)
         if (bluetoothDevice.bondState == BluetoothDevice.BOND_BONDED) {
@@ -221,16 +240,9 @@ class BluetoothDevicesActivity : AppCompatActivity() {
     private fun bluetoothDeviceSelected(device: BluetoothDeviceData) {
         val bluetoothDevice: BluetoothDevice = bluetoothAdapter.getRemoteDevice(device.address)
         if (bluetoothDevice.bondState == BluetoothDevice.BOND_BONDED) {
-            Log.d("BluetoothConnection", "Device $bluetoothDevice \n Paired")
             sendResultBack(bluetoothDevice)
         } else {
-            Log.d("BluetoothConnection", "Device $bluetoothDevice \n Un-Paired")
-            if (bluetoothDevice.createBond().not())
-                Toast.makeText(
-                    this,
-                    "Failed to pair with ${bluetoothDevice.name}",
-                    Toast.LENGTH_SHORT
-                ).show()
+            bluetoothDevice.createBond()
         }
     }
 
@@ -244,11 +256,4 @@ class BluetoothDevicesActivity : AppCompatActivity() {
         }
         finish()
     }
-
-    private val toggleBluetoothResult =
-        registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult()
-        ) {
-
-        }
 }

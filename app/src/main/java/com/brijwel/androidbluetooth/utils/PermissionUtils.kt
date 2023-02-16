@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 
@@ -17,6 +18,7 @@ fun Activity.hasAllPermission(permissions: Array<String>): Boolean {
         ) == PackageManager.PERMISSION_GRANTED
     }
 }
+
 fun Context.hasAllPermission(permissions: Array<String>): Boolean {
     return permissions.all {
         ActivityCompat.checkSelfPermission(
@@ -35,7 +37,18 @@ fun Fragment.hasAllPermission(permissions: Array<String>): Boolean {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 fun getRequiredBluetoothPermissions(): Array<String> {
+    return arrayOf(
+        Manifest.permission.BLUETOOTH_SCAN,
+        Manifest.permission.BLUETOOTH_CONNECT
+    )
+}
+
+/**
+ * Location permission needed only if your app derives physical location from Bluetooth scan results.
+ */
+fun getRequiredBluetoothPermissionsForLocation(): Array<String> {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         arrayOf(
             Manifest.permission.BLUETOOTH_SCAN,
